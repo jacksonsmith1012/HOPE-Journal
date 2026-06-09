@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>our little journal ✦</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Reenie+Beanie&family=Indie+Flower&family=Lato:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Floating decorative elements -->
+  <div class="deco deco-star" style="top:8%;left:6%">✦</div>
+  <div class="deco deco-star" style="top:15%;right:9%">✧</div>
+  <div class="deco deco-star" style="bottom:20%;left:4%">✦</div>
+  <div class="deco deco-star" style="bottom:12%;right:7%">✧</div>
+  <div class="deco deco-heart" style="top:22%;left:3%">♡</div>
+  <div class="deco deco-heart" style="bottom:30%;right:5%">♡</div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <span class="title-main">our little journal</span>
+        <span class="title-sub">a place for all of us ✦</span>
+      </div>
+      <div class="header-actions">
+        <div id="userChip" class="user-chip hidden">
+          <img id="userChipImg" src="" alt="" />
+          <span id="userChipName"></span>
+        </div>
+        <button class="btn-write" id="openWriteBtn">+ write something</button>
+        <button class="btn-ghost" id="switchUserBtn">switch</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main scene -->
+  <main class="scene">
+
+    <!-- Pencil SVG decoration -->
+    <div class="pencil-wrap">
+      <svg class="pencil-svg" viewBox="0 0 280 28" xmlns="http://www.w3.org/2000/svg">
+        <!-- Eraser -->
+        <rect x="0" y="6" width="28" height="16" rx="3" fill="#F2B8C6"/>
+        <rect x="26" y="8" width="3" height="12" fill="#e0a0b0"/>
+        <!-- Metal band -->
+        <rect x="29" y="7" width="8" height="14" fill="#d4c5a9"/>
+        <rect x="30" y="9" width="6" height="1.5" fill="#c2b090"/>
+        <rect x="30" y="12" width="6" height="1.5" fill="#c2b090"/>
+        <rect x="30" y="15" width="6" height="1.5" fill="#c2b090"/>
+        <!-- Body -->
+        <rect x="37" y="6" width="210" height="16" fill="#FDE68A"/>
+        <rect x="37" y="6" width="210" height="4" fill="#FBBF24" opacity="0.4"/>
+        <!-- Text on pencil -->
+        <text x="100" y="18" font-family="Lato, sans-serif" font-size="7" fill="#a07830" opacity="0.7" letter-spacing="1">our little journal</text>
+        <!-- Wood tip -->
+        <polygon points="247,6 247,22 270,14" fill="#d4a96a"/>
+        <!-- Lead tip -->
+        <polygon points="270,10 270,18 280,14" fill="#555"/>
+      </svg>
+    </div>
+
+    <!-- Notebook -->
+    <div class="notebook-container">
+      <div class="notebook">
+
+        <!-- Spiral binding -->
+        <div class="spirals">
+          <div class="spiral-row">
+            <div class="spiral"></div><div class="spiral"></div><div class="spiral"></div>
+            <div class="spiral"></div><div class="spiral"></div><div class="spiral"></div>
+            <div class="spiral"></div><div class="spiral"></div><div class="spiral"></div>
+            <div class="spiral"></div><div class="spiral"></div><div class="spiral"></div>
+            <div class="spiral"></div><div class="spiral"></div><div class="spiral"></div>
+            <div class="spiral"></div><div class="spiral"></div><div class="spiral"></div>
+            <div class="spiral"></div><div class="spiral"></div>
+          </div>
+        </div>
+
+        <!-- Page content area -->
+        <div class="page">
+          <!-- Margin line -->
+          <div class="margin-line"></div>
+
+          <!-- Page header -->
+          <div class="page-top-label">
+            <span class="page-label-text">Group Journal</span>
+            <span class="page-date-text" id="todayDate"></span>
+          </div>
+
+          <!-- Entries feed -->
+          <div class="entries-feed" id="entriesFeed">
+            <div class="entries-loading" id="loadingState">
+              <span class="loading-dots">loading entries<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+            </div>
+            <div class="entries-empty hidden" id="emptyState">
+              <p class="empty-text">no entries yet — be the first to write something ✦</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Washi tape decorations on notebook -->
+    <div class="washi washi-top"></div>
+    <div class="washi washi-corner"></div>
+
+    <!-- Small sticky note -->
+    <div class="sticky-note">
+      <p>leave a little<br/>piece of yourself<br/>here ♡</p>
+    </div>
+
+  </main>
+
+  <!-- ====== MODALS ====== -->
+
+  <!-- Onboarding modal -->
+  <div class="modal-overlay" id="onboardingOverlay">
+    <div class="modal modal-onboard">
+      <div class="modal-deco">✦</div>
+      <h2 class="modal-title">welcome, friend ♡</h2>
+      <p class="modal-subtitle">let's set up your little corner</p>
+
+      <div class="form-group">
+        <label class="form-label">your name</label>
+        <input type="text" class="form-input handwriting-input" id="onboardName" placeholder="what do we call you?" maxlength="30" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">your photo</label>
+        <div class="photo-upload-area" id="photoUploadArea">
+          <div class="photo-preview-wrap" id="photoPreviewWrap">
+            <img id="photoPreview" src="" alt="" class="hidden" />
+            <div class="photo-placeholder" id="photoPlaceholder">
+              <span>📷</span>
+              <span class="photo-hint">tap to choose</span>
+            </div>
+          </div>
+          <input type="file" id="photoInput" accept="image/*" class="hidden" />
+        </div>
+        <p class="form-hint">this will show as a polaroid next to your entries</p>
+      </div>
+
+      <button class="btn-primary" id="onboardSubmit">join the journal →</button>
+    </div>
+  </div>
+
+  <!-- Write entry modal -->
+  <div class="modal-overlay hidden" id="writeOverlay">
+    <div class="modal modal-write">
+      <button class="modal-close" id="closeWriteBtn">✕</button>
+      <div class="modal-deco">✧</div>
+      <h2 class="modal-title">what's on your mind?</h2>
+
+      <div class="write-user-preview">
+        <img id="writeUserImg" src="" alt="" class="write-user-photo" />
+        <span id="writeUserName" class="write-user-name"></span>
+      </div>
+
+      <div class="form-group">
+        <textarea class="form-textarea handwriting-input" id="entryText" placeholder="write something here..." maxlength="600" rows="5"></textarea>
+        <div class="char-count"><span id="charCount">0</span>/600</div>
+      </div>
+
+      <button class="btn-primary" id="submitEntryBtn">post to journal ✦</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
