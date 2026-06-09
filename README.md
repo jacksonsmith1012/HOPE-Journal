@@ -1,9 +1,11 @@
 # our little journal ✦
 A pastel scrapbook-style group journal. Posts in handwriting, Polaroid photos, spiral notebook vibes.
 
+**No paid services required** — only Firebase Firestore (free tier).
+
 ---
 
-## Setup (takes ~10 minutes)
+## Setup (takes ~5 minutes)
 
 ### 1. Create a Firebase project
 1. Go to [console.firebase.google.com](https://console.firebase.google.com)
@@ -16,13 +18,13 @@ const firebaseConfig = {
   apiKey: "AIza...",
   authDomain: "your-project.firebaseapp.com",
   projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
   messagingSenderId: "123456789",
   appId: "1:123:web:abc"
 };
 ```
 
 5. **Paste this into `app.js`** — replace the placeholder config at the top of the file.
+   (You do NOT need `storageBucket` — photos are stored directly in Firestore as compressed data.)
 
 ---
 
@@ -30,15 +32,11 @@ const firebaseConfig = {
 1. In the Firebase console, go to **Build → Firestore Database**
 2. Click **Create database** → choose **Start in test mode** → pick a region → Done
 
----
-
-### 3. Enable Storage
-1. Go to **Build → Storage**
-2. Click **Get started** → **Start in test mode** → Done
+That's it — no Storage setup needed!
 
 ---
 
-### 4. Deploy to GitHub Pages
+### 3. Deploy to GitHub Pages
 1. Create a GitHub repo (e.g. `our-journal`)
 2. Push all three files: `index.html`, `style.css`, `app.js`
 3. Go to repo **Settings → Pages → Source → Deploy from branch → main / root**
@@ -46,11 +44,31 @@ const firebaseConfig = {
 
 ---
 
-### 5. (Optional but recommended) Lock down Firebase rules
-Once you've tested, replace the default "allow all" rules:
+### 4. (Optional) Lock down Firestore rules
+Once you've tested, swap the default "allow all" rules under **Build → Firestore → Rules**:
 
-**Firestore rules** (Build → Firestore → Rules):
 ```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /entries/{entry} {
+      allow read: if true;
+      allow create: if request.resource.data.text.size() <= 600
+                    && request.resource.data.name.size() <= 30;
+    }
+  }
+}
+```
+
+---
+
+## How it works
+- **First visit:** enter your name + upload a photo → the photo is compressed to ~15–40 KB in-browser using a canvas, then stored as base64 in `localStorage` on your device
+- **"Switch"** button lets another person log in on the same device
+- **Entries** are stored in Firestore (text + compressed photo) and load in real-time for everyone
+- **No Firebase Storage** — zero cost, zero extra setup
+- Posts display in **Caveat** handwriting font on ruled notebook paper
+- Each entry has a Polaroid-style filtered photo with a slight random rotation```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
