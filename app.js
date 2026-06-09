@@ -1,5 +1,5 @@
 // ============================================================
-//  our little journal — app.js
+//  our little journal — app.js (attempt 2 lol)
 //  Firebase Firestore only (photos stored as base64 in Firestore)
 // ============================================================
 
