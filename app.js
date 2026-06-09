@@ -16,15 +16,19 @@ import {
 //  🔧 PASTE YOUR FIREBASE CONFIG HERE
 //  1. Go to console.firebase.google.com
 //  2. Create a project → Add web app → copy the config below
+
 // ============================================================
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDMzJ7zA59mx-_BIwVuUppdTQRC8k85jcw",
+  authDomain: "hope-journal-cloud.firebaseapp.com",
+  projectId: "hope-journal-cloud",
+  storageBucket: "hope-journal-cloud.firebasestorage.app",
+  messagingSenderId: "133230680800",
+  appId: "1:133230680800:web:e4ee54905fb08bad708e85",
+  measurementId: "G-E415YM84ST"
 };
+
 
 // ── Init ──────────────────────────────────────────────────
 const fbApp   = initializeApp(firebaseConfig);
