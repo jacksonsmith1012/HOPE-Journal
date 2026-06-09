@@ -1,6 +1,6 @@
 // ============================================================
 //  our little journal — app.js
-//  Firebase Firestore + Storage backend
+//  Firebase Firestore only (photos stored as base64 in Firestore)
 // ============================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -8,15 +8,12 @@ import {
   getFirestore, collection, addDoc, onSnapshot,
   orderBy, query, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getStorage, ref as storageRef, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // ============================================================
 //  🔧 PASTE YOUR FIREBASE CONFIG HERE
 //  1. Go to console.firebase.google.com
-//  2. Create a project → Add web app → copy the config below
-
+//  2. Create a project → Add web app → copy the config object
+//  3. You only need Firestore — no Storage required!
 // ============================================================
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -29,11 +26,9 @@ const firebaseConfig = {
   measurementId: "G-E415YM84ST"
 };
 
-
 // ── Init ──────────────────────────────────────────────────
-const fbApp   = initializeApp(firebaseConfig);
-const db      = getFirestore(fbApp);
-const storage = getStorage(fbApp);
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
 
 // ── DOM refs ──────────────────────────────────────────────
 const onboardingOverlay = document.getElementById("onboardingOverlay");
@@ -65,9 +60,8 @@ const writeUserName     = document.getElementById("writeUserName");
 const todayDate         = document.getElementById("todayDate");
 
 // ── State ─────────────────────────────────────────────────
-let currentUser = null;   // { name, photoURL }
+let currentUser  = null;   // { name, photoDataURL }
 let selectedFile = null;
-let unsubscribeEntries = null;
 
 // ── On load ───────────────────────────────────────────────
 (function init() {
@@ -96,12 +90,38 @@ function loadUser() {
 }
 
 function applyUserToUI() {
-  userChipImg.src   = currentUser.photoURL;
+  userChipImg.src          = currentUser.photoDataURL;
   userChipName.textContent = currentUser.name;
   userChip.classList.remove("hidden");
-
-  writeUserImg.src  = currentUser.photoURL;
+  writeUserImg.src         = currentUser.photoDataURL;
   writeUserName.textContent = currentUser.name;
+}
+
+// ── Image compression via canvas ──────────────────────────
+// Resizes to max 200×200, outputs JPEG at 70% quality (~15-40 KB)
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const MAX = 200;
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+        else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+        canvas.width  = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.70));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // ── Photo upload preview ───────────────────────────────────
@@ -119,21 +139,16 @@ photoInput.addEventListener("change", (e) => {
 // ── Onboarding submit ──────────────────────────────────────
 onboardSubmit.addEventListener("click", async () => {
   const name = onboardName.value.trim();
-  if (!name) { shake(onboardName); return; }
+  if (!name)         { shake(onboardName);     return; }
   if (!selectedFile) { shake(photoUploadArea); return; }
 
-  onboardSubmit.disabled = true;
-  onboardSubmit.textContent = "uploading...";
+  onboardSubmit.disabled    = true;
+  onboardSubmit.textContent = "saving...";
 
   try {
-    // Upload profile photo to Firebase Storage
-    const ext  = selectedFile.name.split(".").pop();
-    const path = `profiles/${Date.now()}_${name}.${ext}`;
-    const sRef = storageRef(storage, path);
-    await uploadBytes(sRef, selectedFile);
-    const photoURL = await getDownloadURL(sRef);
+    const photoDataURL = await compressImage(selectedFile);
 
-    currentUser = { name, photoURL };
+    currentUser = { name, photoDataURL };
     localStorage.setItem("journalUser", JSON.stringify(currentUser));
     applyUserToUI();
 
@@ -143,7 +158,7 @@ onboardSubmit.addEventListener("click", async () => {
     console.error(err);
     showToast("something went wrong — try again :(");
   } finally {
-    onboardSubmit.disabled = false;
+    onboardSubmit.disabled    = false;
     onboardSubmit.textContent = "join the journal →";
   }
 });
@@ -152,12 +167,12 @@ onboardSubmit.addEventListener("click", async () => {
 switchUserBtn.addEventListener("click", () => {
   if (!confirm("Switch to a different person? You'll need to re-enter your name and photo.")) return;
   localStorage.removeItem("journalUser");
-  currentUser = null;
+  currentUser  = null;
   selectedFile = null;
   photoPreview.classList.add("hidden");
   photoPlaceholder.classList.remove("hidden");
   onboardName.value = "";
-  photoInput.value = "";
+  photoInput.value  = "";
   userChip.classList.add("hidden");
   onboardingOverlay.classList.remove("hidden");
 });
@@ -168,13 +183,10 @@ openWriteBtn.addEventListener("click", () => {
   writeOverlay.classList.remove("hidden");
   entryText.focus();
 });
-closeWriteBtn.addEventListener("click", () => {
-  writeOverlay.classList.add("hidden");
-});
+closeWriteBtn.addEventListener("click", () => writeOverlay.classList.add("hidden"));
 writeOverlay.addEventListener("click", (e) => {
   if (e.target === writeOverlay) writeOverlay.classList.add("hidden");
 });
-
 entryText.addEventListener("input", () => {
   charCount.textContent = entryText.value.length;
 });
@@ -184,18 +196,18 @@ submitEntryBtn.addEventListener("click", async () => {
   const text = entryText.value.trim();
   if (!text) { shake(entryText); return; }
 
-  submitEntryBtn.disabled = true;
+  submitEntryBtn.disabled    = true;
   submitEntryBtn.textContent = "posting...";
 
   try {
     await addDoc(collection(db, "entries"), {
-      name:      currentUser.name,
-      photoURL:  currentUser.photoURL,
+      name:         currentUser.name,
+      photoDataURL: currentUser.photoDataURL,   // base64, ~15-40 KB
       text,
-      createdAt: serverTimestamp()
+      createdAt:    serverTimestamp()
     });
 
-    entryText.value = "";
+    entryText.value       = "";
     charCount.textContent = "0";
     writeOverlay.classList.add("hidden");
     showToast("entry posted ✦");
@@ -203,7 +215,7 @@ submitEntryBtn.addEventListener("click", async () => {
     console.error(err);
     showToast("couldn't post — check your connection :(");
   } finally {
-    submitEntryBtn.disabled = false;
+    submitEntryBtn.disabled    = false;
     submitEntryBtn.textContent = "post to journal ✦";
   }
 });
@@ -211,10 +223,8 @@ submitEntryBtn.addEventListener("click", async () => {
 // ── Real-time entries listener ─────────────────────────────
 function listenForEntries() {
   const q = query(collection(db, "entries"), orderBy("createdAt", "desc"));
-  unsubscribeEntries = onSnapshot(q, (snapshot) => {
+  onSnapshot(q, (snapshot) => {
     loadingState.classList.add("hidden");
-
-    // Remove old rendered entries (not the loading/empty states)
     document.querySelectorAll(".entry-item").forEach(el => el.remove());
 
     if (snapshot.empty) {
@@ -224,8 +234,7 @@ function listenForEntries() {
     emptyState.classList.add("hidden");
 
     snapshot.docs.forEach((doc, i) => {
-      const data = doc.data();
-      const el = buildEntryEl(data, i);
+      const el = buildEntryEl(doc.data(), i);
       entriesFeed.appendChild(el);
     });
   }, (err) => {
@@ -253,10 +262,13 @@ function buildEntryEl(data, index) {
       })
     : "just now";
 
+  // Use photoDataURL (new) or photoURL (legacy fallback)
+  const photoSrc = data.photoDataURL || data.photoURL || "";
+
   wrap.innerHTML = `
     <div class="polaroid-wrap">
       <div class="polaroid" style="--rotate:${rotate}deg">
-        <img src="${escHtml(data.photoURL)}" alt="${escHtml(data.name)}" />
+        <img src="${escHtml(photoSrc)}" alt="${escHtml(data.name)}" />
         <span class="polaroid-name">${escHtml(data.name)}</span>
       </div>
     </div>
@@ -279,12 +291,11 @@ function escHtml(str) {
 
 function shake(el) {
   el.style.animation = "none";
-  el.offsetHeight; // reflow
+  el.offsetHeight;
   el.style.animation = "shake 0.4s ease";
   el.addEventListener("animationend", () => { el.style.animation = ""; }, { once: true });
 }
 
-// Toast
 let toastEl = null;
 function showToast(msg) {
   if (!toastEl) {
@@ -298,7 +309,6 @@ function showToast(msg) {
   toastEl._timer = setTimeout(() => toastEl.classList.remove("show"), 3000);
 }
 
-// Shake keyframes injected once
 const shakeStyle = document.createElement("style");
 shakeStyle.textContent = `
   @keyframes shake {
